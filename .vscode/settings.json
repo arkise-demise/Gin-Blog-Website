@@ -1,11 +1,17 @@
 {
   "cSpell.words": [
+    "allpost",
+    "blogpost",
     "dbname",
+    "deletepost",
     "dgrijalva",
+    "getblog",
     "godotenv",
     "gofiber",
     "gorm",
     "joho",
-    "Parsejwt"
+    "Parsejwt",
+    "uniquepost",
+    "updatepost"
   ]
 }
