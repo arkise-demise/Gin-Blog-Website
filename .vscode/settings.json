@@ -8,6 +8,7 @@
     "getblog",
     "godotenv",
     "gofiber",
+    "gonic",
     "gorm",
     "joho",
     "Parsejwt",

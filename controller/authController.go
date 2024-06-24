@@ -13,54 +13,47 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/gofiber/fiber/v2"
+	"github.com/gin-gonic/gin"
 )
-
 
 func validateEmail(email string) bool {
 	Re := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$`)
 	return Re.MatchString(email)
 }
 
-func RegisterController(c *fiber.Ctx) error {
+func RegisterController(c *gin.Context) {
 	var data map[string]interface{}
 	var userData models.User
-	if err := c.BodyParser(&data);err != nil {
+	if err := c.ShouldBindJSON(&data); err != nil {
 		fmt.Println("unable to parse body")
+		c.JSON(400, gin.H{"message": "Invalid request body"})
+		return
 	}
 
-	//check if password is less than 6 character
-
-	if len(data["password"].(string))<=6 {
-		c.Status(400)
-		return c.JSON(fiber.Map{
-			"message":"password must be greater than 6 character!",
-		})
+	// Check if password is less than 6 characters
+	if len(data["password"].(string)) <= 6 {
+		c.JSON(400, gin.H{"message": "Password must be greater than 6 characters!"})
+		return
 	}
 
-	if !validateEmail(strings.TrimSpace(data["email"].(string))){
-		c.Status(400)
-		return c.JSON(fiber.Map{
-			"message":"Invalid Email Address!",
-		})
+	// Validate email
+	if !validateEmail(strings.TrimSpace(data["email"].(string))) {
+		c.JSON(400, gin.H{"message": "Invalid Email Address!"})
+		return
 	}
 
-	//check if email already exist in database
-
-	database.DB.Where("email=?",strings.TrimSpace(data["email"].(string))).First(&userData)
-	if userData.Id!=0 {
-		c.Status(400)
-		return c.JSON(fiber.Map{
-			"message":"Email already exist!",
-		})
+	// Check if email already exists in database
+	database.DB.Where("email = ?", strings.TrimSpace(data["email"].(string))).First(&userData)
+	if userData.Id != 0 {
+		c.JSON(400, gin.H{"message": "Email already exists!"})
+		return
 	}
 
 	user := models.User{
 		FirstName: data["first_name"].(string),
-		LastName: data["last_name"].(string),
-		Phone: data["phone"].(string),
-		Email: strings.TrimSpace(data["email"].(string)),
-
+		LastName:  data["last_name"].(string),
+		Phone:     data["phone"].(string),
+		Email:     strings.TrimSpace(data["email"].(string)),
 	}
 	user.SetPassword(data["password"].(string))
 	err := database.DB.Create(&user)
@@ -68,54 +61,46 @@ func RegisterController(c *fiber.Ctx) error {
 	if err != nil {
 		log.Println(err)
 	}
-	c.Status(200)
-	  return c.JSON(fiber.Map{
-		"user":user,
-		"message":"Account created successfully!",
-	  })
+
+	c.JSON(200, gin.H{
+		"user":    user,
+		"message": "Account created successfully!",
+	})
 }
 
-
-func LoginController(c *fiber.Ctx) error {
+func LoginController(c *gin.Context) {
 	var data map[string]string
-	if err := c.BodyParser(&data);err!=nil{
+	if err := c.ShouldBindJSON(&data); err != nil {
 		fmt.Println("Unable to parse body")
+		c.JSON(400, gin.H{"message": "Invalid request body"})
+		return
 	}
 
 	var user models.User
-	database.DB.Where("email=?",data["email"]).First(&user)
+	database.DB.Where("email = ?", data["email"]).First(&user)
 	if user.Id == 0 {
-		c.Status(404)
-		return c.JSON(fiber.Map{
-			"message":"Email Address doesn't exist,Please,create an account!",
-		})
+		c.JSON(404, gin.H{"message": "Email Address doesn't exist, Please, create an account!"})
+		return
 	}
-	if err := user.ComparePassword(data["password"]);err !=nil {
-		c.Status(400)
-		return c.JSON(fiber.Map{
-			"message":"incorrect password!",
-		})
+
+	if err := user.ComparePassword(data["password"]); err != nil {
+		c.JSON(400, gin.H{"message": "Incorrect password!"})
+		return
 	}
 
 	token, err := utils.GenerateJwt(strconv.Itoa(int(user.Id)))
 	if err != nil {
-		c.Status(fiber.StatusInternalServerError)
-		return nil
+		c.JSON(500, gin.H{"message": "Internal server error"})
+		return
 	}
 
-	cookie := fiber.Cookie{
-		Name:"jwt",
-		Value: token,
-		Expires: time.Now().Add(time.Hour*24),
-		HTTPOnly: true,
-	}
-	c.Cookie((&cookie))
-	return c.JSON(fiber.Map{
-		"message":"you have logged in successfully!",
-		"user":user,
+	c.SetCookie("jwt", token, int(24*time.Hour.Seconds()), "/", "", false, true)
+	c.JSON(200, gin.H{
+		"message": "You have logged in successfully!",
+		"user":    user,
 	})
 }
 
-type Claims struct{
+type Claims struct {
 	jwt.StandardClaims
 }

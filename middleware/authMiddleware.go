@@ -3,17 +3,22 @@ package middleware
 import (
 	"Gin-Blog-Website/utils"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gin-gonic/gin"
 )
 
-func AuthMiddleware(c *fiber.Ctx)error {
-	cookie := c.Cookies("jwt")
-	if _, err := utils.ParseJwt(cookie); err != nil {
-		c.Status(fiber.StatusUnauthorized)
-		return c.JSON(fiber.Map{
-			"message":"Unauthorized!",
-		
-		})
+func AuthMiddleware(c *gin.Context) {
+	cookie, err := c.Cookie("jwt")
+	if err != nil {
+		c.JSON(401, gin.H{"message": "Unauthorized!"})
+		c.Abort()
+		return
 	}
-	return c.Next()
+
+	if _, err := utils.ParseJwt(cookie); err != nil {
+		c.JSON(401, gin.H{"message": "Unauthorized!"})
+		c.Abort()
+		return
+	}
+
+	c.Next()
 }

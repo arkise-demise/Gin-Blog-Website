@@ -7,7 +7,7 @@ import (
 	"Gin-Blog-Website/database"
 	"Gin-Blog-Website/routes"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
 
@@ -26,10 +26,10 @@ func main() {
 		log.Fatal("PORT environment variable not set")
 	}
 
-	app := fiber.New()
+	app := gin.Default()
 	routes.Setup(app)
 
-	err = app.Listen(":" + port)
+	err = app.Run(":" + port)
 	if err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
