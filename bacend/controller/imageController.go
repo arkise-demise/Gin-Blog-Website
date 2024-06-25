@@ -34,6 +34,6 @@ func Upload(c *gin.Context) {
 		}
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"url": "http://localhost:8080/api/upload/" + fileName,
+		"url": "http://localhost:8080/api/uploads/" + fileName,
 	})
 }

@@ -20,5 +20,7 @@ func Setup(app *gin.Engine) {
 		auth.PUT("/api/updatepost/:id", controller.UpdatePostById)
 		auth.GET("/api/uniquepost", controller.UniquePost)
 		auth.DELETE("/api/deletepost/:id", controller.DeletePost)
+		auth.POST("api/upload",controller.Upload)
+		auth.Static("api/uploads","./uploads")
 	}
 }
