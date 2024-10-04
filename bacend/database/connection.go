@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
-	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
@@ -20,29 +20,36 @@ func Connect() {
 		log.Fatal("Error loading .env file")
 	}
 
-	// Construct DSN
+	// Construct DSN for PostgreSQL
 	username := os.Getenv("DB_USERNAME")
 	password := os.Getenv("DB_PASSWORD")
 	host := os.Getenv("DB_HOST")
 	port := os.Getenv("DB_PORT")
 	dbname := os.Getenv("DB_NAME")
 
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-		username, password, host, port, dbname)
+	// PostgreSQL DSN (Data Source Name)
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
+		host, username, password, dbname, port)
 
-	// Connect to the database
-	database, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	// Connect to the PostgreSQL database
+	database, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		panic("Could not connect to the database!")
-	}else{
-		log.Println("Database connected successfully!")
+		log.Fatal("Could not connect to the PostgreSQL database!")
+	} else {
+		log.Println("PostgreSQL database connected successfully!")
 	}
 
+	// Assign the database connection to the global `DB` variable
 	DB = database
 
-	database.AutoMigrate(
+	// Automigrate to create tables based on models
+	err = database.AutoMigrate(
 		&models.User{},
 		&models.Blog{},
-
 	)
+	if err != nil {
+		log.Fatal("Error during AutoMigrate:", err)
+	} else {
+		log.Println("Database tables migrated successfully!")
+	}
 }

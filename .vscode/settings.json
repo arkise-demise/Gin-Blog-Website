@@ -13,6 +13,7 @@
     "joho",
     "Parsejwt",
     "uniquepost",
-    "updatepost"
+    "updatepost",
+    "userid"
   ]
 }
