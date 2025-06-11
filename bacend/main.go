@@ -1,3 +1,4 @@
+// main.go
 package main
 
 import (
@@ -7,18 +8,17 @@ import (
 	"Gin-Blog-Website/database"
 	"Gin-Blog-Website/routes"
 
+	"github.com/gin-contrib/cors" // Import the cors middleware
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
 
 func main() {
-	// Load environment variables first
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
 
-	// Connect to the database
 	database.Connect()
 
 	port := os.Getenv("PORT")
@@ -27,7 +27,19 @@ func main() {
 	}
 
 	app := gin.Default()
-	routes.Setup(app)
+
+	// --- Add CORS Middleware here ---
+	app.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:3000"},                             // Allow your Next.js frontend origin
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},           // Allow all methods
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"}, // Important for headers sent by frontend
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,  // Allow cookies (for JWT)
+		MaxAge:           86400, // Preflight cache for 24 hours
+	}))
+	// --- End CORS Middleware ---
+
+	routes.Setup(app) // Setup your routes AFTER CORS middleware
 
 	err = app.Run(":" + port)
 	if err != nil {
