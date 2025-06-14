@@ -1,8 +1,7 @@
-// route.go
 package routes
 
 import (
-	"Gin-Blog-Website/controller"
+	"Gin-Blog-Website/controller" // Ensure you have the comment controller functions here
 	"Gin-Blog-Website/middleware"
 
 	"github.com/gin-gonic/gin"
@@ -14,17 +13,22 @@ func Setup(app *gin.Engine) {
 	app.POST("/api/login", controller.LoginController)
 	app.GET("/api/allpost", controller.GetAllPost)
 	app.GET("/api/allpost/:id", controller.GetPostById)
-	app.Static("api/uploads", "./uploads") // <-- This was also inside the auth group before, but it should be public.
+	app.Static("/api/uploads", "./uploads") // Ensure this is always public
+
+	// --- New: Public route to get comments for a post ---
+	app.GET("/api/posts/:id/comments", controller.GetCommentsByPostID)
 
 	// Authenticated Routes
-	auth := app.Group("/") // Group starts at the root path '/'
+	auth := app.Group("/api") // Change this group to /api to simplify paths below
 	auth.Use(middleware.AuthMiddleware)
 	{
-		auth.POST("/api/post", controller.CreatePost)
-		auth.PUT("/api/updatepost/:id", controller.UpdatePostById)
-		auth.GET("/api/uniquepost", controller.UniquePost)
-		auth.DELETE("/api/deletepost/:id", controller.DeletePost)
-		auth.POST("api/upload", controller.Upload) // <-- Here's the route!
-		// auth.Static("api/uploads","./uploads") // If this is inside the auth group, it's problematic for serving uploaded images publicly.
+		auth.POST("/post", controller.CreatePost)              // Path is now /api/post
+		auth.PUT("/updatepost/:id", controller.UpdatePostById) // Path is now /api/updatepost/:id
+		auth.GET("/uniquepost", controller.UniquePost)         // Path is now /api/uniquepost
+		auth.DELETE("/deletepost/:id", controller.DeletePost)  // Path is now /api/deletepost/:id
+		auth.POST("/upload", controller.Upload)                // Path is now /api/upload
+		// auth.Static("uploads", "./uploads") // This should be app.Static in public group.
+
+		auth.POST("/posts/:id/comments", controller.CreateComment) // Path is now /api/posts/:id/comments
 	}
 }

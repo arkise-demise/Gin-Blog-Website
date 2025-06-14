@@ -4,7 +4,6 @@ import (
 	"Gin-Blog-Website/database"
 	"Gin-Blog-Website/models"
 	"Gin-Blog-Website/utils"
-	"fmt"
 	"log"
 	"math"
 	"strconv"
@@ -114,18 +113,83 @@ func GetPostById(c *gin.Context) {
 }
 
 func UpdatePostById(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
-	blog := models.Blog{
-		Id: uint(id),
-	}
-
-	if err := c.ShouldBindJSON(&blog); err != nil {
-		fmt.Println("Unable to parse body")
-		c.JSON(400, gin.H{"message": "Invalid payload!"})
+	// 1. Get post ID from URL parameter
+	postIDStr := c.Param("id")
+	postID, err := strconv.ParseUint(postIDStr, 10, 32)
+	if err != nil {
+		log.Printf("Error parsing post ID from URL: %v\n", err)
+		c.JSON(400, gin.H{"message": "Invalid post ID format."})
 		return
 	}
-	database.DB.Model(&blog).Updates(blog)
-	c.JSON(200, gin.H{"message": "Post updated successfully"})
+
+	// 2. Get UserID from context (set by AuthMiddleware)
+	userIDVal, exists := c.Get("userID")
+	if !exists {
+		log.Println("Error: UserID not found in context for UpdatePostById. Is AuthMiddleware properly setting it?")
+		c.JSON(500, gin.H{"message": "Authentication context missing."})
+		return
+	}
+	userIDStr, ok := userIDVal.(string)
+	if !ok {
+		log.Printf("Error: UserID in context is not a string, got %T\n", userIDVal)
+		c.JSON(500, gin.H{"message": "Invalid user ID format in context."})
+		return
+	}
+	currentUserID, err := strconv.ParseUint(userIDStr, 10, 32)
+	if err != nil {
+		log.Printf("Error parsing currentUserID '%s' from context to uint: %v\n", userIDStr, err)
+		c.JSON(500, gin.H{"message": "Invalid user ID format."})
+		return
+	}
+
+	// 3. Fetch the existing post from the database
+	var existingPost models.Blog
+	result := database.DB.First(&existingPost, postID)
+	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			log.Printf("Post with ID %d not found for update.\n", postID)
+			c.JSON(404, gin.H{"message": "Post not found."})
+			return
+		}
+		log.Printf("Database error fetching post for update (ID %d): %v\n", postID, result.Error)
+		c.JSON(500, gin.H{"message": "Database error retrieving post."})
+		return
+	}
+
+	// 4. Authorization Check: Ensure the current user owns the post
+	if existingPost.UserID != uint(currentUserID) {
+		log.Printf("Unauthorized attempt to update post %d by user %d. Owner is %d.\n", postID, currentUserID, existingPost.UserID)
+		c.JSON(403, gin.H{"message": "You are not authorized to update this post."})
+		return
+	}
+
+	// 5. Bind the incoming JSON payload for updates
+	// Use a map to allow partial updates without zeroing out unprovided fields
+	var updates map[string]interface{}
+	if err := c.ShouldBindJSON(&updates); err != nil {
+		log.Printf("Error binding update payload for Post ID %d: %v\n", postID, err.Error())
+		c.JSON(400, gin.H{"message": "Invalid update payload!"})
+		return
+	}
+
+	// 6. Update the post in the database
+	// GORM's Model(&existingPost).Updates(map) will only update provided fields
+	updateResult := database.DB.Model(&existingPost).Updates(updates)
+	if updateResult.Error != nil {
+		log.Printf("Error updating post %d in database: %v\n", postID, updateResult.Error)
+		c.JSON(500, gin.H{"message": "Failed to update post due to database error."})
+		return
+	}
+
+	// If RowsAffected is 0, it means no changes were made (e.g., sent same data or no data)
+	if updateResult.RowsAffected == 0 {
+		log.Printf("No changes applied when updating post %d. Possibly same data sent.", postID)
+		c.JSON(200, gin.H{"message": "Post updated, but no changes were applied (possibly same data)."})
+		return
+	}
+
+	// 7. Respond with success
+	c.JSON(200, gin.H{"message": "Post updated successfully!", "post": existingPost}) // Return updated post if needed
 }
 
 func UniquePost(c *gin.Context) {
@@ -150,7 +214,7 @@ func UniquePost(c *gin.Context) {
 	}
 
 	if result.RowsAffected == 0 {
-		c.JSON(404, gin.H{"error": "No blogs found for this user"})
+		c.JSON(200, gin.H{"data": []models.Blog{}}) 
 		return
 	}
 
