@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import api from '../../../utils/axios-config'; // Assuming utils/axios-config is at the root
+import api from '../../../utils/axios-config';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../context/AuthContext'; // Import the useAuth hook from your context
@@ -28,13 +28,27 @@ export default function Login() {
 
     try {
       const response = await api.post('/login', formData);
-      const data = response.data as { message: string };
-      setMessage(data.message);
+      // **IMPORTANT**: Your backend must now return a 'user' object within the response.data.
+      // This 'user' object should contain at least 'id', 'email', and crucially, 'role'.
+      // For example: { message: "Login successful", user: { id: 1, email: "admin@example.com", role: "admin", first_name: "Admin", last_name: "User" } }
+      const responseData = response.data as {
+        message: string;
+        user: { id: number; email: string; role: 'user' | 'admin'; first_name?: string; last_name?: string; };
+      };
 
-      // Call the login function from AuthContext to update global state
-      login();
+      setMessage(responseData.message);
 
-      router.push('/'); // Redirect to home after successful login
+      // Call the login function from AuthContext and pass the user data received from the backend.
+      // This updates the global authentication state with the user's details and role.
+      login(responseData.user);
+
+      // Redirect the user based on their role for a tailored experience.
+      if (responseData.user.role === 'admin') {
+        router.push('/admin/dashboard'); // Send admins to their dashboard
+      } else {
+        router.push('/'); // Regular users go to the homepage
+      }
+
     } catch (err: any) {
       setError(err.response?.data?.message || 'Login failed.');
     }

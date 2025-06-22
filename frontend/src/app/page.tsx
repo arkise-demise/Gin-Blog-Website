@@ -23,7 +23,8 @@ export default async function Home() {
   let error: string | null = null;
 
   try {
-    const response = await api.get('/allpost');
+    // CHANGE: Request '/posts' which is your public route for all posts
+    const response = await api.get('/posts');
     posts = (response.data as { data: BlogPost[] }).data;
   } catch (err: any) {
     console.error('Failed to fetch posts:', err);

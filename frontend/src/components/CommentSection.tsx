@@ -36,7 +36,7 @@ export default function CommentSection({ initialComments, postId }: CommentSecti
 
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setCommentError(null); // Clear previous errors
+    setCommentError(null); 
     setIsSubmitting(true);
 
     if (!newCommentContent.trim()) {

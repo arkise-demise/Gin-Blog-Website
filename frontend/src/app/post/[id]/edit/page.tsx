@@ -30,15 +30,17 @@ export default function EditPostPage({ params }: { params: { id: string } }) {
   useEffect(() => {
     const fetchPost = async () => {
       try {
-        const response = await api.get(`/allpost/${id}`);
+        // CHANGE: Request '/posts/:id' for single post data
+        const response = await api.get(`/posts/${id}`);
         const data = response.data as { data: BlogPost };
         setFormData(data.data);
       } catch (err: any) {
         console.error(`Failed to fetch post with ID ${id}:`, err);
         setError(err.response?.data?.message || 'Failed to load post for editing.');
         // Redirect to login if unauthorized or post not found
-        if (err.response?.status === 401 || err.response?.status === 404) {
-          router.push('/login');
+        if (err.response?.status === 401 || err.response?.status === 404 || err.response?.status === 403) {
+          // Added 403 for forbidden access
+          router.push('/login'); // Could also redirect to an /unauthorized page
         }
       } finally {
         setLoading(false);
@@ -91,12 +93,13 @@ export default function EditPostPage({ params }: { params: { id: string } }) {
 
     try {
       const updatedData = { ...formData, image: imageUrl };
-      await api.put(`/updatepost/${id}`, updatedData);
+      // The backend route for updating a post is /api/posts/:id
+      await api.put(`/posts/${id}`, updatedData);
       setMessage('Post updated successfully!');
       router.push(`/posts/${id}`); // Redirect to the post detail page
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to update post.');
-      if (err.response?.status === 401) {
+      if (err.response?.status === 401 || err.response?.status === 403) { // Added 403 for forbidden
         router.push('/login'); // Redirect to login if unauthorized
       }
     }

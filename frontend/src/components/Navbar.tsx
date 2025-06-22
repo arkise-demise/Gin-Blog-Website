@@ -2,17 +2,24 @@
 "use client";
 
 import Link from 'next/link';
-import { useAuth } from '../app/context/AuthContext'; // Import useAuth
-import { useRouter } from 'next/navigation'; // For redirection
+import { useAuth } from '../app/context/AuthContext';
+import { useRouter } from 'next/navigation';
 
 export default function Navbar() {
-  const { isLoggedIn, logout } = useAuth(); // Use the context hook
+  const { isAuthenticated, isAdmin, logout } = useAuth();
   const router = useRouter();
 
   const handleLogout = () => {
-    logout(); // Call the logout function from context
-    router.push('/login'); // Redirect after logout
+    logout();
+    router.push('/login');
   };
+
+  // Reusable classes for smaller, blue-themed action links
+  const actionLinkClasses = "text-white text-sm font-medium py-1.5 px-3 rounded-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-opacity-50";
+
+  // Classes for Login/Register (kept original size as they are less common once logged in)
+  const authLinkClasses = "bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50";
+
 
   return (
     <nav className="bg-gray-800 p-4 shadow-md">
@@ -22,7 +29,7 @@ export default function Navbar() {
           <img
             src="/gin-blog-logo.png"
             alt="Gin Blog Logo"
-            className="h-30 w-30 object-contain" // Increased from h-14 w-14 to h-20 w-20
+            className="h-30 w-30 object-contain"
           />
           <span className="text-white text-3xl font-bold italic hover:text-blue-400 transition duration-300">
             <span className="text-pink-400 font-extrabold italic">Gin Blog</span>
@@ -31,33 +38,49 @@ export default function Navbar() {
 
         {/* Navigation Buttons (Right Side) */}
         <div className="flex space-x-4">
-          {!isLoggedIn && (
+          {/* Conditional rendering based on isAuthenticated */}
+          {!isAuthenticated && (
+            // For guests (not logged in)
             <>
-             <Link href="/register" className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+              <Link href="/register" className={authLinkClasses.replace('bg-blue-500', 'bg-blue-500')}> {/* Keep blue for Register */}
                 Register
               </Link>
-              <Link href="/login" className="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50">
+              <Link href="/login" className={authLinkClasses.replace('bg-green-500', 'bg-indigo-500')}> {/* Changed Login to indigo for slight variation but same theme */}
                 Login
               </Link>
             </>
           )}
 
-          {isLoggedIn && (
+            {isAuthenticated && !isAdmin && (
+            // For authenticated users who are NOT admins
             <>
-              <Link href="/create-post" className="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50">
+              <Link href="/" className={`${actionLinkClasses} bg-blue-500 hover:bg-blue-600 focus:ring-blue-500`}>
+                Home
+              </Link>
+              <Link href="/create-post" className={`${actionLinkClasses} bg-blue-500 hover:bg-blue-600 focus:ring-blue-500`}>
                 Create Post
               </Link>
-              <Link href="/my-posts" className="bg-yellow-500 hover:bg-yellow-600 text-gray-800 font-semibold py-2 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-opacity-50">
+              <Link href="/my-posts" className={`${actionLinkClasses} bg-blue-500 hover:bg-blue-600 focus:ring-blue-500`}>
                 My Posts
               </Link>
-               <button // Basic Logout button example
-                onClick={handleLogout} // Call the context's logout function
-                className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50"
+              {/* NEW: My Profile link for regular users */}
+              <Link href="/my-profile" className={`${actionLinkClasses} bg-blue-500 hover:bg-blue-600 focus:ring-blue-500`}>
+                My Profile
+              </Link>
+              <button
+              onClick={handleLogout}
+              className={`${actionLinkClasses} bg-blue-500 hover:bg-blue-600 focus:ring-blue-500`}
               >
-                Logout
+              Logout
               </button>
             </>
-          )}
+            )}
+
+            {isAuthenticated && isAdmin && (
+            // This block is intentionally empty for authenticated admins.
+            // Their navigation is handled by the sidebar.
+            <></>
+            )}
         </div>
       </div>
     </nav>

@@ -33,7 +33,8 @@ export default function MyPosts() {
   useEffect(() => {
     const fetchMyPosts = async () => {
       try {
-        const response = await api.get('/uniquepost');
+        // CHANGE: Request '/posts/user' for user's own posts
+        const response = await api.get('/posts/user');
         const data = response.data as { data: BlogPost[] };
         setPosts(data.data);
 
@@ -68,7 +69,8 @@ export default function MyPosts() {
       return;
     }
     try {
-      await api.delete(`/deletepost/${postId}`);
+      // The backend route for user deleting their own post is /api/posts/:id
+      await api.delete(`/posts/${postId}`);
       // Filter out the deleted post
       const updatedPosts = posts.filter((post) => post.id !== postId);
       setPosts(updatedPosts);
@@ -118,8 +120,8 @@ export default function MyPosts() {
     }
 
     try {
-      // Send the PUT request to your backend's UpdatePostById handler
-      const response = await api.put(`/updatepost/${editingPostId}`, editedPostData);
+      // The backend route for user updating their own post is /api/posts/:id
+      const response = await api.put(`/posts/${editingPostId}`, editedPostData);
       // Assert the type of response.data to avoid 'unknown' error
       const data = response.data as { post: BlogPost };
       const updatedPost = data.post;

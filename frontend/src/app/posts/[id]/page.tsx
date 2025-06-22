@@ -36,25 +36,19 @@ interface PostPageProps {
 }
 
 export default async function PostPage({ params }: PostPageProps) {
-  // --- FIX 2: Await params and access id safely ---
-  // Although params usually comes synchronously, Next.js recommends awaiting.
-  // Destructure and access properties on a resolved object.
   const { id: postId } = await params;
-  // --- END FIX 2 ---
 
   let post: BlogPost | null = null;
   let comments: Comment[] = [];
   let error: string | null = null;
 
   try {
-    // --- FIX 1: Remove the redundant /api/ prefix from api.get calls ---
-    // The baseURL in axios-config.ts already provides '/api'
-    const postResponse = await api.get(`/allpost/${postId}`); // Changed from /api/allpost
+    // CHANGE: Request '/posts/:id' for single post
+    const postResponse = await api.get(`/posts/${postId}`);
     post = (postResponse.data as { data: BlogPost }).data;
 
-    const commentsResponse = await api.get(`/posts/${postId}/comments`); // Changed from /api/posts
+    const commentsResponse = await api.get(`/posts/${postId}/comments`);
     comments = (commentsResponse.data as { data: Comment[] }).data;
-    // --- END FIX 1 ---
 
   } catch (err: any) {
     console.error(`Failed to fetch post ${postId} or comments:`, err);

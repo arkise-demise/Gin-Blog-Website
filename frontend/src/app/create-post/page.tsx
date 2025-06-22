@@ -59,7 +59,8 @@ export default function CreatePost() {
 
     try {
       const postData = { ...formData, image: imageUrl };
-      const response = await api.post('/post', postData);
+      // --- CHANGE IS HERE: Use '/posts' instead of '/post' ---
+      const response = await api.post('/posts', postData);
       setMessage((response.data as { message: string }).message);
       router.push('/'); // Redirect to home after post creation
     } catch (err: any) {

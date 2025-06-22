@@ -5,6 +5,8 @@ import (
 	"Gin-Blog-Website/models"
 	"log"
 	"strconv"
+	"strings"
+	"time" // NEW: Import the time package for timestamps
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -47,16 +49,19 @@ func CreateComment(c *gin.Context) {
 	}
 
 	comment := models.Comment{
-		Content: input.Content,
-		UserID:  uint(userID),
-		BlogID:  uint(blogID),
+		Content:   input.Content,
+		UserID:    uint(userID),
+		BlogID:    uint(blogID),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		// NEW: Set IsApproved to false by default for pending approval
+		IsApproved: false,
 	}
 
 	if err := database.DB.Create(&comment).Error; err != nil {
 		log.Printf("Error creating comment in database: %v\n", err.Error())
-		if err.Error() == `pq: insert or update on table "comments" violates foreign key constraint "fk_comments_user"` ||
-			err.Error() == `pq: insert or update on table "comments" violates foreign key constraint "fk_blogs_comments"` { // Adjust constraint name based on your DB schema
-			c.JSON(400, gin.H{"message": "Invalid user or blog post ID."})
+		if strings.Contains(err.Error(), "foreign key constraint") {
+			c.JSON(400, gin.H{"message": "Invalid user or blog post ID (foreign key error)."})
 			return
 		}
 		c.JSON(500, gin.H{"message": "Failed to create comment due to database error."})
@@ -65,7 +70,7 @@ func CreateComment(c *gin.Context) {
 
 	database.DB.Preload("User").First(&comment, comment.ID)
 
-	c.JSON(201, gin.H{"message": "Comment added successfully!", "comment": comment})
+	c.JSON(201, gin.H{"message": "Comment submitted for approval!", "comment": comment}) // Changed message
 }
 
 func GetCommentsByPostID(c *gin.Context) {
@@ -77,7 +82,8 @@ func GetCommentsByPostID(c *gin.Context) {
 	}
 
 	var comments []models.Comment
-	result := database.DB.Where("blog_id = ?", blogID).Order("created_at asc").Preload("User").Find(&comments)
+	// NEW: Only retrieve approved comments for public view
+	result := database.DB.Where("blog_id = ? AND is_approved = ?", blogID, true).Order("created_at asc").Preload("User").Find(&comments)
 
 	if result.Error != nil && result.Error != gorm.ErrRecordNotFound {
 		log.Printf("Database error retrieving comments for blog %d: %v\n", blogID, result.Error)
