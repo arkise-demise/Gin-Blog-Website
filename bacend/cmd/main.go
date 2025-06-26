@@ -6,6 +6,7 @@ import (
 
 	"Gin-Blog-Website/database"
 	"Gin-Blog-Website/models" // IMPORTANT: Import your models package
+	"Gin-Blog-Website/platform/cloudinary"
 	"Gin-Blog-Website/routes"
 
 	"github.com/gin-contrib/cors"
@@ -22,6 +23,9 @@ func main() {
 
 	// Connect to the database
 	database.Connect()
+
+	// NEW: Initialize Cloudinary
+	cloudinary.InitCloudinary()
 
 	// AutoMigrate all your models to ensure database tables are up-to-date
 	// This is crucial for adding the new 'is_approved' columns to 'blogs' and 'comments' tables.

@@ -7,7 +7,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../context/AuthContext';
 
-// Define interfaces for type safety
 interface User {
   id: number;
   first_name: string;
@@ -18,10 +17,10 @@ interface BlogPost {
   id: number;
   title: string;
   description: string;
-  image: string; // URL of the image
-  user: User; // The user who created the post
-  created_at: string; // Timestamp of creation
-  is_approved: boolean; // ADDED: This crucial field to track approval status
+  image: string; 
+  user: User; 
+  created_at: string; 
+  is_approved: boolean; 
 }
 
 export default function AdminDashboard() {

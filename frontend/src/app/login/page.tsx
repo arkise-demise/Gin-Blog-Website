@@ -5,7 +5,7 @@ import { useState } from 'react';
 import api from '../../../utils/axios-config';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '../context/AuthContext'; // Import the useAuth hook from your context
+import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -15,7 +15,7 @@ export default function Login() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
-  const { login } = useAuth(); // Destructure the login function from AuthContext
+  const { login } = useAuth();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -28,40 +28,34 @@ export default function Login() {
 
     try {
       const response = await api.post('/login', formData);
-      // **IMPORTANT**: Your backend must now return a 'user' object within the response.data.
-      // This 'user' object should contain at least 'id', 'email', and crucially, 'role'.
-      // For example: { message: "Login successful", user: { id: 1, email: "admin@example.com", role: "admin", first_name: "Admin", last_name: "User" } }
       const responseData = response.data as {
         message: string;
-        user: { id: number; email: string; role: 'user' | 'admin'; first_name?: string; last_name?: string; };
+        user: { id: number; email: string; role: 'user' | 'admin'; first_name?: string; last_name?: string; profile_picture_url?: string; }; // Added profile_picture_url
       };
 
       setMessage(responseData.message);
-
-      // Call the login function from AuthContext and pass the user data received from the backend.
-      // This updates the global authentication state with the user's details and role.
       login(responseData.user);
 
-      // Redirect the user based on their role for a tailored experience.
       if (responseData.user.role === 'admin') {
-        router.push('/admin/dashboard'); // Send admins to their dashboard
+        router.push('/admin/dashboard');
       } else {
-        router.push('/'); // Regular users go to the homepage
+        router.push('/');
       }
 
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Login failed.');
+      setError(err.response?.data?.message || 'Login failed. Please check your credentials.'); // More user-friendly error
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h2 className="text-3xl font-bold text-center text-gray-800 mb-6">Login</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-500 to-purple-600 p-4"> {/* Enhanced background */}
+      <div className="bg-white p-8 sm:p-10 rounded-xl shadow-2xl w-full max-w-md border border-gray-200"> {/* Sharper shadow, rounded corners, subtle border */}
+        <h2 className="text-4xl font-extrabold text-center text-gray-900 mb-8">Welcome Back!</h2> {/* Larger, bolder title */}
+        <p className="text-center text-gray-600 mb-6">Sign in to access your blog.</p> {/* Subtitle */}
+        <form onSubmit={handleSubmit} className="space-y-6"> {/* More vertical space */}
           <div>
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
-              Email:
+            <label className="block text-gray-700 text-sm font-semibold mb-2" htmlFor="email"> {/* Bolder label */}
+              Email Address
             </label>
             <input
               type="email"
@@ -69,13 +63,14 @@ export default function Login() {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200" // Modern input style
+              placeholder="you@example.com"
               required
             />
           </div>
           <div>
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">
-              Password:
+            <label className="block text-gray-700 text-sm font-semibold mb-2" htmlFor="password">
+              Password
             </label>
             <input
               type="password"
@@ -83,22 +78,23 @@ export default function Login() {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+              placeholder="••••••••"
               required
             />
           </div>
           <button
             type="submit"
-            className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 w-full transition duration-300 transform hover:scale-105" // More prominent button
           >
             Login
           </button>
         </form>
-        {message && <p className="text-green-500 text-center mt-4">{message}</p>}
-        {error && <p className="text-red-500 text-center mt-4">{error}</p>}
-        <p className="text-center text-gray-600 text-sm mt-4">
+        {message && <p className="text-green-600 text-center mt-6 font-medium">{message}</p>} {/* Stronger color */}
+        {error && <p className="text-red-600 text-center mt-6 font-medium">{error}</p>} {/* Stronger color */}
+        <p className="text-center text-gray-600 text-sm mt-8"> {/* More margin */}
           Don't have an account?{' '}
-          <Link href="/register" className="text-green-500 hover:underline">
+          <Link href="/register" className="text-blue-600 hover:text-blue-800 hover:underline font-semibold"> {/* Bolder link, stronger hover */}
             Register here
           </Link>
         </p>
